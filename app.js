@@ -11,10 +11,10 @@ const heroDesc = document.getElementById("heroDesc");
 
 async function loadMovies() {
     try {
-        const res = await fetch("movies.json");
+        const res = await fetch("/api/movies");
         movies = await res.json();
     } catch {
-        movies = [];
+        try { const res = await fetch("movies.json"); movies = await res.json(); } catch { movies = []; }
     }
     if (movies.length > 0) {
         const hero = movies[Math.floor(Math.random() * movies.length)];

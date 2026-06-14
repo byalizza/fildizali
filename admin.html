@@ -206,21 +206,26 @@
     </div>
 
     <script>
-        const TMDB_API_KEY = localStorage.getItem("tmdb_key") || "";
-        const STORAGE_KEY = "fildizali_movies";
-
+        const API_BASE = "";
         let movies = [];
 
-        function loadMovies() {
+        async function api(path, method = "GET", body = null) {
+            const opts = { method, headers: {} };
+            if (body) { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+            const res = await fetch(API_BASE + path, opts);
+            return res.json();
+        }
+
+        async function loadMovies() {
             try {
-                const data = localStorage.getItem(STORAGE_KEY);
-                movies = data ? JSON.parse(data) : [];
-            } catch(e) { movies = []; }
+                const data = await api("/api/movies");
+                movies = Array.isArray(data) ? data : [];
+            } catch { movies = []; }
             updateUI();
         }
 
-        function saveMovies() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(movies, null, 2));
+        async function saveToServer() {
+            await api("/api/movies", "PUT", movies);
             updateUI();
         }
 
@@ -270,7 +275,7 @@
             setTimeout(() => t.classList.remove("show"), 3000);
         }
 
-        function searchTMDB() {
+        async function searchTMDB() {
             const query = document.getElementById("filmAdi").value.trim();
             if (!query) { showToast("Film adı girin", true); return; }
 
@@ -280,63 +285,46 @@
 
             let apiKey = localStorage.getItem("tmdb_key");
             if (!apiKey) {
-                apiKey = prompt("TMDB API Key girin (https://www.themoviedb.org/settings/api):");
-                if (apiKey) {
-                    localStorage.setItem("tmdb_key", apiKey);
-                } else {
-                    btn.innerHTML = "🔍 TMDB'den Otomatik Getir";
-                    btn.disabled = false;
-                    return;
-                }
+                apiKey = prompt("TMDB API Key girin:");
+                if (apiKey) localStorage.setItem("tmdb_key", apiKey);
+                else { btn.innerHTML = "🔍 TMDB'den Otomatik Getir"; btn.disabled = false; return; }
             }
 
             const type = document.getElementById("filmType").value;
             const searchType = type === "dizi" ? "tv" : "movie";
 
-            fetch(`https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.results && data.results.length > 0) {
-                        const item = data.results[0];
-                        const preview = document.getElementById("tmdbPreview");
-                        preview.classList.add("active");
-                        document.getElementById("tmdbTitle").textContent = item.title || item.name;
-                        document.getElementById("tmdbOverview").textContent = item.overview ? item.overview.substring(0, 200) + "..." : "Açıklama bulunamadı.";
-                        document.getElementById("tmdbRating").textContent = "⭐ " + (item.vote_average || "?");
-                        document.getElementById("tmdbYear").textContent = (item.release_date || item.first_air_date || "").substring(0, 4) || "?";
-                        document.getElementById("tmdbDuration").textContent = type === "film" ? (item.runtime ? item.runtime + "dk" : "?") : (item.number_of_seasons ? item.number_of_seasons + " Sezon" : "?");
-                        if (item.poster_path) {
-                            document.getElementById("tmdbPoster").src = "https://image.tmdb.org/t/p/w200" + item.poster_path;
-                        }
-
-                        preview.dataset.tmdbId = item.id;
-                        preview.dataset.tmdbType = searchType;
-                        preview.dataset.tmdbPoster = item.poster_path ? "https://image.tmdb.org/t/p/w200" + item.poster_path : "";
-                        preview.dataset.tmdbRating = item.vote_average || 0;
-                        preview.dataset.tmdbYear = (item.release_date || item.first_air_date || "").substring(0, 4) || "";
-                        preview.dataset.tmdbOverview = item.overview || "";
-                        preview.dataset.tmdbTitle = item.title || item.name;
-
-                        showToast("✅ " + (item.title || item.name) + " bulundu!");
-                    } else {
-                        showToast("❌ Sonuç bulunamadı", true);
-                    }
-                })
-                .catch(err => {
-                    if (err.message.includes("401")) {
-                        showToast("❌ API Key geçersiz! Ayarlar'dan yeni key alın.", true);
-                        localStorage.removeItem("tmdb_key");
-                    } else {
-                        showToast("❌ Hata: " + err.message, true);
-                    }
-                })
-                .finally(() => {
-                    btn.innerHTML = "🔍 TMDB'den Otomatik Getir";
-                    btn.disabled = false;
-                });
+            try {
+                const data = await fetch(`https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`).then(r => r.json());
+                if (data.results && data.results.length > 0) {
+                    const item = data.results[0];
+                    const preview = document.getElementById("tmdbPreview");
+                    preview.classList.add("active");
+                    document.getElementById("tmdbTitle").textContent = item.title || item.name;
+                    document.getElementById("tmdbOverview").textContent = item.overview ? item.overview.substring(0, 200) + "..." : "Açıklama bulunamadı.";
+                    document.getElementById("tmdbRating").textContent = "⭐ " + (item.vote_average || "?");
+                    document.getElementById("tmdbYear").textContent = (item.release_date || item.first_air_date || "").substring(0, 4) || "?";
+                    document.getElementById("tmdbDuration").textContent = type === "film" ? (item.runtime ? item.runtime + "dk" : "?") : (item.number_of_seasons ? item.number_of_seasons + " Sezon" : "?");
+                    if (item.poster_path) document.getElementById("tmdbPoster").src = "https://image.tmdb.org/t/p/w200" + item.poster_path;
+                    preview.dataset.tmdbId = item.id;
+                    preview.dataset.tmdbType = searchType;
+                    preview.dataset.tmdbPoster = item.poster_path ? "https://image.tmdb.org/t/p/w200" + item.poster_path : "";
+                    preview.dataset.tmdbRating = item.vote_average || 0;
+                    preview.dataset.tmdbYear = (item.release_date || item.first_air_date || "").substring(0, 4) || "";
+                    preview.dataset.tmdbOverview = item.overview || "";
+                    preview.dataset.tmdbTitle = item.title || item.name;
+                    showToast("✅ " + (item.title || item.name) + " bulundu!");
+                } else {
+                    showToast("❌ Sonuç bulunamadı", true);
+                }
+            } catch(err) {
+                showToast("❌ Hata: " + err.message, true);
+            } finally {
+                btn.innerHTML = "🔍 TMDB'den Otomatik Getir";
+                btn.disabled = false;
+            }
         }
 
-        function addMovie() {
+        async function addMovie() {
             const title = document.getElementById("filmAdi").value.trim();
             const embedUrl = document.getElementById("embedUrl").value.trim();
             const filmLinki = document.getElementById("filmLinki").value.trim();
@@ -347,7 +335,6 @@
 
             const preview = document.getElementById("tmdbPreview");
             const movie = {
-                id: Date.now(),
                 title: preview.dataset.tmdbTitle || title,
                 year: preview.dataset.tmdbYear || "",
                 rating: parseFloat(preview.dataset.tmdbRating) || 0,
@@ -357,23 +344,30 @@
                 poster: preview.dataset.tmdbPoster || "",
                 overview: preview.dataset.tmdbOverview || "",
                 duration: document.getElementById("tmdbDuration").textContent || "",
-                emoji: type === "film" ? "🎬" : "📺",
-                addedAt: new Date().toISOString()
+                emoji: type === "film" ? "🎬" : "📺"
             };
 
-            movies.push(movie);
-            saveMovies();
-            clearForm();
-            showToast("✅ " + movie.title + " eklendi!");
+            try {
+                const result = await api("/api/movies", "POST", movie);
+                if (result.success) {
+                    movies.push(result.movie);
+                    updateUI();
+                    clearForm();
+                    showToast("✅ " + movie.title + " eklendi!");
+                }
+            } catch { showToast("❌ Eklenemedi", true); }
         }
 
-        function deleteMovie(index) {
-            if (confirm("Silmek istediğine emin misin?")) {
-                const title = movies[index].title;
+        async function deleteMovie(index) {
+            if (!confirm("Silmek istediğine emin misin?")) return;
+            const id = movies[index].id;
+            const title = movies[index].title;
+            try {
+                await api("/api/movies/" + id, "DELETE");
                 movies.splice(index, 1);
-                saveMovies();
+                updateUI();
                 showToast("🗑️ " + title + " silindi");
-            }
+            } catch { showToast("❌ Silinemedi", true); }
         }
 
         function clearForm() {
@@ -388,20 +382,20 @@
                 if (el.tagName === "IMG") el.src = "";
                 else el.textContent = "";
             });
-            ["tmdbId","tmdbType","tmdbPoster","tmdbRating","tmdbYear","tmdbOverview","tmdbTitle"].forEach(a => {
-                delete preview.dataset[a];
-            });
+            ["tmdbId","tmdbType","tmdbPoster","tmdbRating","tmdbYear","tmdbOverview","tmdbTitle"].forEach(a => { delete preview.dataset[a]; });
         }
 
-        function clearAll() {
-            if (confirm("Tüm filmleri silmek istediğine emin misin?")) {
+        async function clearAll() {
+            if (!confirm("Tüm filmleri silmek istediğine emin misin?")) return;
+            try {
+                await api("/api/movies", "DELETE");
                 movies = [];
-                saveMovies();
+                updateUI();
                 showToast("🗑️ Tüm filmler silindi");
-            }
+            } catch { showToast("❌ Silinemedi", true); }
         }
 
-        function processBulk() {
+        async function processBulk() {
             const input = document.getElementById("bulkJsonInput").value.trim();
             if (!input) { showToast("JSON verisi girin", true); return; }
 
@@ -418,7 +412,6 @@
             progress.style.display = "block";
             const bar = document.getElementById("bulkBar");
             const status = document.getElementById("bulkStatus");
-            let processed = 0;
             const total = items.length;
 
             let apiKey = localStorage.getItem("tmdb_key");
@@ -428,16 +421,9 @@
                 else { progress.style.display = "none"; return; }
             }
 
-            function processNext(idx) {
-                if (idx >= items.length) {
-                    status.textContent = `✅ ${total} film işlendi!`;
-                    bar.style.width = "100%";
-                    saveMovies();
-                    showToast(`✅ ${total} film başarıyla eklendi!`);
-                    document.getElementById("bulkJsonInput").value = "";
-                    return;
-                }
+            const newMovies = [];
 
+            for (let idx = 0; idx < items.length; idx++) {
                 const item = items[idx];
                 status.textContent = `[${idx+1}/${total}] ${item.film_adi} işleniyor...`;
                 bar.style.width = ((idx / total) * 100) + "%";
@@ -445,96 +431,66 @@
                 const query = item.film_adi.replace(/\s*\(\d{4}\)/, "").trim();
                 const yearMatch = item.film_adi.match(/\((\d{4})\)/);
                 const searchType = item.film_adi.toLowerCase().includes("dizi") || item.film_adi.toLowerCase().includes("season") ? "tv" : "movie";
-                const url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`;
+                let found = null;
 
-                fetch(url)
-                    .then(r => r.json())
-                    .then(data => {
-                        let found = null;
-                        if (data.results && data.results.length > 0) {
-                            if (yearMatch) {
-                                found = data.results.find(r => (r.release_date || r.first_air_date || "").includes(yearMatch[1]));
-                            }
-                            if (!found) found = data.results[0];
-                        }
+                try {
+                    const data = await fetch(`https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`).then(r => r.json());
+                    if (data.results && data.results.length > 0) {
+                        if (yearMatch) found = data.results.find(r => (r.release_date || r.first_air_date || "").includes(yearMatch[1]));
+                        if (!found) found = data.results[0];
+                    }
+                } catch {}
 
-                        const movie = {
-                            id: Date.now() + idx,
-                            title: item.film_adi,
-                            year: found ? (found.release_date || found.first_air_date || "").substring(0, 4) : (yearMatch ? yearMatch[1] : ""),
-                            rating: found ? found.vote_average || 0 : 0,
-                            type: searchType === "tv" ? "dizi" : "film",
-                            embed_url: item.embed_url,
-                            film_linki: item.film_linki || "",
-                            poster: found && found.poster_path ? "https://image.tmdb.org/t/p/w200" + found.poster_path : "",
-                            overview: found ? found.overview || "" : "",
-                            duration: "",
-                            emoji: searchType === "tv" ? "📺" : "🎬",
-                            addedAt: new Date().toISOString()
-                        };
-
-                        movies.push(movie);
-                        processed++;
-                        setTimeout(() => processNext(idx + 1), 300);
-                    })
-                    .catch(() => {
-                        const movie = {
-                            id: Date.now() + idx,
-                            title: item.film_adi,
-                            year: yearMatch ? yearMatch[1] : "",
-                            rating: 0,
-                            type: "film",
-                            embed_url: item.embed_url,
-                            film_linki: item.film_linki || "",
-                            poster: "",
-                            overview: "",
-                            duration: "",
-                            emoji: "🎬",
-                            addedAt: new Date().toISOString()
-                        };
-                        movies.push(movie);
-                        processed++;
-                        setTimeout(() => processNext(idx + 1), 300);
-                    });
+                newMovies.push({
+                    title: item.film_adi,
+                    year: found ? (found.release_date || found.first_air_date || "").substring(0, 4) : (yearMatch ? yearMatch[1] : ""),
+                    rating: found ? found.vote_average || 0 : 0,
+                    type: searchType === "tv" ? "dizi" : "film",
+                    embed_url: item.embed_url,
+                    film_linki: item.film_linki || "",
+                    poster: found && found.poster_path ? "https://image.tmdb.org/t/p/w200" + found.poster_path : "",
+                    overview: found ? found.overview || "" : "",
+                    duration: "",
+                    emoji: searchType === "tv" ? "📺" : "🎬"
+                });
             }
 
-            processNext(0);
+            try {
+                const result = await api("/api/movies/bulk", "POST", newMovies);
+                if (result.success) {
+                    await loadMovies();
+                    showToast(`✅ ${result.count} film başarıyla eklendi!`);
+                    document.getElementById("bulkJsonInput").value = "";
+                }
+            } catch { showToast("❌ Toplu ekleme başarısız", true); }
+
+            bar.style.width = "100%";
+            status.textContent = `✅ ${total} film işlendi!`;
         }
 
-        function saveFullJson() {
+        async function saveFullJson() {
             const val = document.getElementById("fullJsonEditor").value.trim();
             if (!val) { showToast("JSON boş", true); return; }
             try {
                 const parsed = JSON.parse(val);
                 if (!Array.isArray(parsed)) throw new Error("Dizi olmalı");
                 movies = parsed;
-                saveMovies();
+                await saveToServer();
                 showToast("✅ " + movies.length + " film kaydedildi!");
-            } catch(e) {
-                showToast("❌ Geçersiz JSON: " + e.message, true);
-            }
+            } catch(e) { showToast("❌ Geçersiz JSON: " + e.message, true); }
         }
 
         function copyFullJson() {
             const val = document.getElementById("fullJsonEditor").value;
-            navigator.clipboard.writeText(val).then(() => {
-                showToast("📋 Kopyalandı!");
-            }).catch(() => {
-                document.getElementById("fullJsonEditor").select();
-                document.execCommand("copy");
-                showToast("📋 Kopyalandı!");
-            });
+            navigator.clipboard.writeText(val).then(() => showToast("📋 Kopyalandı!"));
         }
 
         function exportJsonFile() {
             const data = JSON.stringify(movies, null, 2);
             const blob = new Blob([data], { type: "application/json" });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "movies.json";
-            a.click();
-            URL.revokeObjectURL(url);
+            const a = document.createElement("a"); a.href = url; a.download = "movies.json";
+            a.click(); URL.revokeObjectURL(url);
             showToast("⬇️ movies.json indiriliyor!");
         }
 
