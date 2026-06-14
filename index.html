@@ -1,1 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fildizali - Film & Dizi İzle</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">fildizali<span>.tv</span></div>
+                <nav>
+                    <a href="#" class="active">Ana Sayfa</a>
+                    <a href="#">Filmler</a>
+                    <a href="#">Diziler</a>
+                    <a href="#">Popüler</a>
+                </nav>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Film veya dizi ara...">
+                </div>
+            </div>
+        </div>
+    </header>
 
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <span class="badge">Popüler</span>
+                <h1 id="heroTitle">Yüzüklerin Efendisi</h1>
+                <p id="heroDesc">Orta Dünya'da iyilik ile kötülük arasındaki savaşı konu alan epik bir fantastik seri.</p>
+                <div class="hero-meta">
+                    <span>⭐ 9.2</span>
+                    <span>🕒 2s 58dk</span>
+                    <span>2001</span>
+                </div>
+                <button class="btn-primary">▶ Hemen İzle</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="filters">
+        <div class="container">
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">Tümü</button>
+                <button class="filter-btn" data-filter="film">Filmler</button>
+                <button class="filter-btn" data-filter="dizi">Diziler</button>
+                <button class="filter-btn" data-filter="populer">Popüler</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container">
+            <div class="section-header">
+                <h2 id="sectionTitle">Tüm İçerikler</h2>
+                <span class="count" id="itemCount">0 içerik</span>
+            </div>
+            <div class="movie-grid" id="movieGrid"></div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 fildizali.tv - Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
