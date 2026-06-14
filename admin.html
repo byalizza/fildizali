@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Fildizali</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { padding-top: 80px; background: #0a0a0f; }
+        .admin-container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .admin-header h1 { font-size: 28px; }
+        .admin-header .logo { font-size: 20px; }
+        .add-form { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 28px; margin-bottom: 32px; }
+        .add-form h2 { font-size: 18px; margin-bottom: 20px; color: rgba(255,255,255,0.8); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 6px; font-weight: 500; }
+        .form-group input, .form-group select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group select:focus { border-color: #e50914; }
+        .form-group input::placeholder { color: rgba(255,255,255,0.2); }
+        .form-group select option { background: #1a1a2e; color: #fff; }
+        .tmdb-preview { display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; margin-top: 12px; gap: 16px; align-items: center; }
+        .tmdb-preview.active { display: flex; }
+        .tmdb-preview img { width: 80px; height: 120px; object-fit: cover; border-radius: 8px; }
+        .tmdb-preview .info-preview { flex: 1; }
+        .tmdb-preview .info-preview h3 { font-size: 16px; margin-bottom: 4px; }
+        .tmdb-preview .info-preview p { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+        .tmdb-preview .info-preview .tags { display: flex; gap: 10px; font-size: 12px; color: rgba(255,255,255,0.3); }
+        .btn { padding: 12px 24px; border-radius: 10px; border: none; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #e50914; color: #fff; }
+        .btn-primary:hover { background: #f40612; }
+        .btn-secondary { background: rgba(255,255,255,0.08); color: #fff; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+        .btn-danger { background: rgba(229,9,20,0.15); color: #e50914; }
+        .btn-danger:hover { background: rgba(229,9,20,0.25); }
+        .btn-success { background: #2ecc71; color: #fff; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-sm { padding: 8px 14px; font-size: 12px; }
+        .actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .movie-table { width: 100%; border-collapse: collapse; }
+        .movie-table th { text-align: left; padding: 12px 14px; font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .movie-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; vertical-align: middle; }
+        .movie-table td .poster-thumb { width: 40px; height: 60px; object-fit: cover; border-radius: 4px; }
+        .movie-table td .title-cell { font-weight: 500; }
+        .movie-table td .title-cell small { display: block; font-weight: 400; color: rgba(255,255,255,0.3); font-size: 12px; }
+        .movie-table td .type-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .type-badge.film { background: rgba(229,9,20,0.15); color: #e50914; }
+        .type-badge.dizi { background: rgba(46,204,113,0.15); color: #2ecc71; }
+        .status-msg { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; display: none; }
+        .status-msg.success { display: block; background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.2); color: #2ecc71; }
+        .status-msg.error { display: block; background: rgba(229,9,20,0.1); border: 1px solid rgba(229,9,20,0.2); color: #e50914; }
+        .search-area { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-area input { flex: 1; padding: 10px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; font-size: 14px; outline: none; }
+        .form-group textarea { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; font-size: 14px; outline: none; resize: vertical; min-height: 80px; font-family: inherit; }
+        .toast { position: fixed; bottom: 30px; right: 30px; background: #2ecc71; color: #fff; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 9999; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.error { background: #e50914; }
+        .bulk-input { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; margin-bottom: 32px; }
+        .bulk-input h3 { font-size: 16px; margin-bottom: 12px; }
+        .bulk-input textarea { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; font-size: 13px; outline: none; resize: vertical; min-height: 200px; font-family: 'Consolas', monospace; line-height: 1.5; }
+        .tab-buttons { display: flex; gap: 8px; margin-bottom: 24px; }
+        .tab-btn { padding: 10px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: rgba(255,255,255,0.5); cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+        .tab-btn.active { background: #e50914; border-color: #e50914; color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .loading-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.6s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .import-area { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; }
+        .import-area textarea { width: 100%; padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #fff; font-size: 13px; outline: none; resize: vertical; min-height: 250px; font-family: 'Consolas', monospace; line-height: 1.5; }
+        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">fildizali<span>.tv</span> <span style="font-size:12px;background:#e50914;padding:2px 10px;border-radius:6px;margin-left:8px;font-weight:600;">ADMIN</span></div>
+                <nav>
+                    <a href="index.html">Siteye Dön</a>
+                    <a href="#" class="active">Admin Panel</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🎬 Yönetici Paneli</h1>
+            <span id="movieCount" style="color:rgba(255,255,255,0.4);font-size:14px;">0 film</span>
+        </div>
+
+        <div id="statusMsg" class="status-msg"></div>
+        <div id="toast" class="toast"></div>
+
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="single">Tekli Ekle</button>
+            <button class="tab-btn" data-tab="bulk">Toplu JSON Ekle</button>
+            <button class="tab-btn" data-tab="import">JSON Yükle</button>
+        </div>
+
+        <div class="tab-content active" id="tab-single">
+            <div class="add-form">
+                <h2>➕ Yeni Film / Dizi Ekle</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Film / Dizi Adı *</label>
+                        <input type="text" id="filmAdi" placeholder="Örn: Inception" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Tür *</label>
+                        <select id="filmType">
+                            <option value="film">🎬 Film</option>
+                            <option value="dizi">📺 Dizi</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Embed URL * (İzleme linki)</label>
+                    <input type="text" id="embedUrl" placeholder="https://p.rapidplay.website/#xxx">
+                </div>
+                <div class="form-group">
+                    <label>Film Linki (opsiyonel - kaynak site)</label>
+                    <input type="text" id="filmLinki" placeholder="https://sinekfilmizle.com/...">
+                </div>
+                <button class="btn btn-primary" id="searchTmdbBtn" onclick="searchTMDB()">🔍 TMDB'den Otomatik Getir</button>
+
+                <div id="tmdbPreview" class="tmdb-preview">
+                    <img id="tmdbPoster" src="" alt="">
+                    <div class="info-preview">
+                        <h3 id="tmdbTitle"></h3>
+                        <p id="tmdbOverview"></p>
+                        <div class="tags">
+                            <span id="tmdbRating">⭐ 0.0</span>
+                            <span id="tmdbYear">-</span>
+                            <span id="tmdbDuration">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-success" onclick="addMovie()">💾 Kaydet</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">Temizle</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-bulk">
+            <div class="bulk-input">
+                <h3>📋 JSON Dizisini Yapıştır</h3>
+                <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-bottom:12px;">Her film için { film_adi, film_linki, embed_url } formatında JSON yapıştırın. TMDB'den otomatik tamamlanacak.</p>
+                <textarea id="bulkJsonInput" placeholder='[
+  { "film_adi": "Inception (2010)", "film_linki": "https://...", "embed_url": "https://..." },
+  { "film_adi": "Interstellar (2014)", "film_linki": "https://...", "embed_url": "https://..." }
+]'></textarea>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="processBulk()">🚀 Toplu İşle</button>
+                </div>
+                <div id="bulkProgress" style="margin-top:16px;display:none;">
+                    <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:16px;">
+                        <div id="bulkStatus">İşleniyor...</div>
+                        <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:10px;">
+                            <div id="bulkBar" style="height:100%;width:0%;background:#e50914;border-radius:4px;transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="tab-import">
+            <div class="import-area">
+                <h3>📂 JSON Verisini Yapıştır / Düzenle</h3>
+                <p style="color:rgba(255,255,255,0.4);font-size:13px;margin-bottom:12px;">Tüm film verilerini buraya yapıştırıp kaydedebilirsin. Dosyayı dışa aktarmak için kopyala.</p>
+                <textarea id="fullJsonEditor"></textarea>
+                <div class="actions">
+                    <button class="btn btn-success" onclick="saveFullJson()">💾 JSON'u Kaydet</button>
+                    <button class="btn btn-secondary" onclick="copyFullJson()">📋 Kopyala</button>
+                    <button class="btn btn-danger" onclick="exportJsonFile()">⬇️ İndir</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-area">
+            <input type="text" id="adminSearch" placeholder="🔍 Film/dizi ara..." oninput="renderTable()">
+            <button class="btn btn-secondary btn-sm" onclick="renderTable()">Ara</button>
+            <button class="btn btn-danger btn-sm" onclick="clearAll()" style="margin-left:auto;">🗑️ Tümünü Temizle</button>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="movie-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Film / Dizi</th>
+                        <th>Tür</th>
+                        <th>Puan</th>
+                        <th>Yıl</th>
+                        <th>Embed</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="movieTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const TMDB_API_KEY = localStorage.getItem("tmdb_key") || "";
+        const STORAGE_KEY = "fildizali_movies";
+
+        let movies = [];
+
+        function loadMovies() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                movies = data ? JSON.parse(data) : [];
+            } catch(e) { movies = []; }
+            updateUI();
+        }
+
+        function saveMovies() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(movies, null, 2));
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById("movieCount").textContent = movies.length + " film";
+            document.getElementById("fullJsonEditor").value = JSON.stringify(movies, null, 2);
+            renderTable();
+        }
+
+        function renderTable() {
+            const q = document.getElementById("adminSearch").value.toLowerCase();
+            let filtered = movies;
+            if (q) filtered = movies.filter(m => m.title.toLowerCase().includes(q));
+
+            const tbody = document.getElementById("movieTableBody");
+            tbody.innerHTML = filtered.map((m, i) => {
+                const idx = movies.indexOf(m);
+                return `<tr>
+                    <td style="color:rgba(255,255,255,0.3);font-size:12px;">${idx + 1}</td>
+                    <td>
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            ${m.poster ? `<img src="${m.poster}" class="poster-thumb" onerror="this.style.display='none'">` : ""}
+                            <div class="title-cell">
+                                ${m.title}
+                                <small>${m.overview ? m.overview.substring(0, 60) + "..." : ""}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="type-badge ${m.type || "film"}">${m.type === "dizi" ? "📺 Dizi" : "🎬 Film"}</span></td>
+                    <td>⭐ ${m.rating || "-"}</td>
+                    <td>${m.year || "-"}</td>
+                    <td><a href="${m.embed_url}" target="_blank" style="color:#e50914;font-size:12px;">🔗 Link</a></td>
+                    <td><button class="btn btn-danger btn-sm" onclick="deleteMovie(${idx})">Sil</button></td>
+                </tr>`;
+            }).join("");
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3);">Henüz film eklenmemiş</td></tr>`;
+            }
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById("toast");
+            t.textContent = msg;
+            t.className = "toast" + (isError ? " error" : "");
+            t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3000);
+        }
+
+        function searchTMDB() {
+            const query = document.getElementById("filmAdi").value.trim();
+            if (!query) { showToast("Film adı girin", true); return; }
+
+            const btn = document.getElementById("searchTmdbBtn");
+            btn.innerHTML = '<span class="loading-spinner"></span> Aranıyor...';
+            btn.disabled = true;
+
+            let apiKey = localStorage.getItem("tmdb_key");
+            if (!apiKey) {
+                apiKey = prompt("TMDB API Key girin (https://www.themoviedb.org/settings/api):");
+                if (apiKey) {
+                    localStorage.setItem("tmdb_key", apiKey);
+                } else {
+                    btn.innerHTML = "🔍 TMDB'den Otomatik Getir";
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            const type = document.getElementById("filmType").value;
+            const searchType = type === "dizi" ? "tv" : "movie";
+
+            fetch(`https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        const item = data.results[0];
+                        const preview = document.getElementById("tmdbPreview");
+                        preview.classList.add("active");
+                        document.getElementById("tmdbTitle").textContent = item.title || item.name;
+                        document.getElementById("tmdbOverview").textContent = item.overview ? item.overview.substring(0, 200) + "..." : "Açıklama bulunamadı.";
+                        document.getElementById("tmdbRating").textContent = "⭐ " + (item.vote_average || "?");
+                        document.getElementById("tmdbYear").textContent = (item.release_date || item.first_air_date || "").substring(0, 4) || "?";
+                        document.getElementById("tmdbDuration").textContent = type === "film" ? (item.runtime ? item.runtime + "dk" : "?") : (item.number_of_seasons ? item.number_of_seasons + " Sezon" : "?");
+                        if (item.poster_path) {
+                            document.getElementById("tmdbPoster").src = "https://image.tmdb.org/t/p/w200" + item.poster_path;
+                        }
+
+                        preview.dataset.tmdbId = item.id;
+                        preview.dataset.tmdbType = searchType;
+                        preview.dataset.tmdbPoster = item.poster_path ? "https://image.tmdb.org/t/p/w200" + item.poster_path : "";
+                        preview.dataset.tmdbRating = item.vote_average || 0;
+                        preview.dataset.tmdbYear = (item.release_date || item.first_air_date || "").substring(0, 4) || "";
+                        preview.dataset.tmdbOverview = item.overview || "";
+                        preview.dataset.tmdbTitle = item.title || item.name;
+
+                        showToast("✅ " + (item.title || item.name) + " bulundu!");
+                    } else {
+                        showToast("❌ Sonuç bulunamadı", true);
+                    }
+                })
+                .catch(err => {
+                    if (err.message.includes("401")) {
+                        showToast("❌ API Key geçersiz! Ayarlar'dan yeni key alın.", true);
+                        localStorage.removeItem("tmdb_key");
+                    } else {
+                        showToast("❌ Hata: " + err.message, true);
+                    }
+                })
+                .finally(() => {
+                    btn.innerHTML = "🔍 TMDB'den Otomatik Getir";
+                    btn.disabled = false;
+                });
+        }
+
+        function addMovie() {
+            const title = document.getElementById("filmAdi").value.trim();
+            const embedUrl = document.getElementById("embedUrl").value.trim();
+            const filmLinki = document.getElementById("filmLinki").value.trim();
+            const type = document.getElementById("filmType").value;
+
+            if (!title) { showToast("Film adı gerekli", true); return; }
+            if (!embedUrl) { showToast("Embed URL gerekli", true); return; }
+
+            const preview = document.getElementById("tmdbPreview");
+            const movie = {
+                id: Date.now(),
+                title: preview.dataset.tmdbTitle || title,
+                year: preview.dataset.tmdbYear || "",
+                rating: parseFloat(preview.dataset.tmdbRating) || 0,
+                type: type,
+                embed_url: embedUrl,
+                film_linki: filmLinki || "",
+                poster: preview.dataset.tmdbPoster || "",
+                overview: preview.dataset.tmdbOverview || "",
+                duration: document.getElementById("tmdbDuration").textContent || "",
+                emoji: type === "film" ? "🎬" : "📺",
+                addedAt: new Date().toISOString()
+            };
+
+            movies.push(movie);
+            saveMovies();
+            clearForm();
+            showToast("✅ " + movie.title + " eklendi!");
+        }
+
+        function deleteMovie(index) {
+            if (confirm("Silmek istediğine emin misin?")) {
+                const title = movies[index].title;
+                movies.splice(index, 1);
+                saveMovies();
+                showToast("🗑️ " + title + " silindi");
+            }
+        }
+
+        function clearForm() {
+            document.getElementById("filmAdi").value = "";
+            document.getElementById("embedUrl").value = "";
+            document.getElementById("filmLinki").value = "";
+            document.getElementById("filmType").value = "film";
+            const preview = document.getElementById("tmdbPreview");
+            preview.classList.remove("active");
+            ["tmdbTitle","tmdbOverview","tmdbRating","tmdbYear","tmdbDuration","tmdbPoster"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el.tagName === "IMG") el.src = "";
+                else el.textContent = "";
+            });
+            ["tmdbId","tmdbType","tmdbPoster","tmdbRating","tmdbYear","tmdbOverview","tmdbTitle"].forEach(a => {
+                delete preview.dataset[a];
+            });
+        }
+
+        function clearAll() {
+            if (confirm("Tüm filmleri silmek istediğine emin misin?")) {
+                movies = [];
+                saveMovies();
+                showToast("🗑️ Tüm filmler silindi");
+            }
+        }
+
+        function processBulk() {
+            const input = document.getElementById("bulkJsonInput").value.trim();
+            if (!input) { showToast("JSON verisi girin", true); return; }
+
+            let items;
+            try { items = JSON.parse(input); }
+            catch(e) { showToast("❌ Geçersiz JSON: " + e.message, true); return; }
+
+            if (!Array.isArray(items) || items.length === 0) {
+                showToast("❌ Geçerli bir dizi girin", true);
+                return;
+            }
+
+            const progress = document.getElementById("bulkProgress");
+            progress.style.display = "block";
+            const bar = document.getElementById("bulkBar");
+            const status = document.getElementById("bulkStatus");
+            let processed = 0;
+            const total = items.length;
+
+            let apiKey = localStorage.getItem("tmdb_key");
+            if (!apiKey) {
+                apiKey = prompt("TMDB API Key girin:");
+                if (apiKey) localStorage.setItem("tmdb_key", apiKey);
+                else { progress.style.display = "none"; return; }
+            }
+
+            function processNext(idx) {
+                if (idx >= items.length) {
+                    status.textContent = `✅ ${total} film işlendi!`;
+                    bar.style.width = "100%";
+                    saveMovies();
+                    showToast(`✅ ${total} film başarıyla eklendi!`);
+                    document.getElementById("bulkJsonInput").value = "";
+                    return;
+                }
+
+                const item = items[idx];
+                status.textContent = `[${idx+1}/${total}] ${item.film_adi} işleniyor...`;
+                bar.style.width = ((idx / total) * 100) + "%";
+
+                const query = item.film_adi.replace(/\s*\(\d{4}\)/, "").trim();
+                const yearMatch = item.film_adi.match(/\((\d{4})\)/);
+                const searchType = item.film_adi.toLowerCase().includes("dizi") || item.film_adi.toLowerCase().includes("season") ? "tv" : "movie";
+                const url = `https://api.themoviedb.org/3/search/${searchType}?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=tr-TR`;
+
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        let found = null;
+                        if (data.results && data.results.length > 0) {
+                            if (yearMatch) {
+                                found = data.results.find(r => (r.release_date || r.first_air_date || "").includes(yearMatch[1]));
+                            }
+                            if (!found) found = data.results[0];
+                        }
+
+                        const movie = {
+                            id: Date.now() + idx,
+                            title: item.film_adi,
+                            year: found ? (found.release_date || found.first_air_date || "").substring(0, 4) : (yearMatch ? yearMatch[1] : ""),
+                            rating: found ? found.vote_average || 0 : 0,
+                            type: searchType === "tv" ? "dizi" : "film",
+                            embed_url: item.embed_url,
+                            film_linki: item.film_linki || "",
+                            poster: found && found.poster_path ? "https://image.tmdb.org/t/p/w200" + found.poster_path : "",
+                            overview: found ? found.overview || "" : "",
+                            duration: "",
+                            emoji: searchType === "tv" ? "📺" : "🎬",
+                            addedAt: new Date().toISOString()
+                        };
+
+                        movies.push(movie);
+                        processed++;
+                        setTimeout(() => processNext(idx + 1), 300);
+                    })
+                    .catch(() => {
+                        const movie = {
+                            id: Date.now() + idx,
+                            title: item.film_adi,
+                            year: yearMatch ? yearMatch[1] : "",
+                            rating: 0,
+                            type: "film",
+                            embed_url: item.embed_url,
+                            film_linki: item.film_linki || "",
+                            poster: "",
+                            overview: "",
+                            duration: "",
+                            emoji: "🎬",
+                            addedAt: new Date().toISOString()
+                        };
+                        movies.push(movie);
+                        processed++;
+                        setTimeout(() => processNext(idx + 1), 300);
+                    });
+            }
+
+            processNext(0);
+        }
+
+        function saveFullJson() {
+            const val = document.getElementById("fullJsonEditor").value.trim();
+            if (!val) { showToast("JSON boş", true); return; }
+            try {
+                const parsed = JSON.parse(val);
+                if (!Array.isArray(parsed)) throw new Error("Dizi olmalı");
+                movies = parsed;
+                saveMovies();
+                showToast("✅ " + movies.length + " film kaydedildi!");
+            } catch(e) {
+                showToast("❌ Geçersiz JSON: " + e.message, true);
+            }
+        }
+
+        function copyFullJson() {
+            const val = document.getElementById("fullJsonEditor").value;
+            navigator.clipboard.writeText(val).then(() => {
+                showToast("📋 Kopyalandı!");
+            }).catch(() => {
+                document.getElementById("fullJsonEditor").select();
+                document.execCommand("copy");
+                showToast("📋 Kopyalandı!");
+            });
+        }
+
+        function exportJsonFile() {
+            const data = JSON.stringify(movies, null, 2);
+            const blob = new Blob([data], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "movies.json";
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast("⬇️ movies.json indiriliyor!");
+        }
+
+        document.querySelectorAll(".tab-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                btn.classList.add("active");
+                document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+            });
+        });
+
+        document.getElementById("filmAdi").addEventListener("keydown", e => {
+            if (e.key === "Enter") searchTMDB();
+        });
+
+        loadMovies();
+    </script>
+</body>
+</html>

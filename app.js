@@ -1,26 +1,4 @@
-const movies = [
-    { id: 1, title: "Yüzüklerin Efendisi: Kralın Dönüşü", year: 2003, rating: 9.2, type: "film", duration: "3s 21dk", category: "populer", emoji: "💍" },
-    { id: 2, title: "Breaking Bad", year: 2008, rating: 9.5, type: "dizi", duration: "5 Sezon", category: "populer", emoji: "🧪" },
-    { id: 3, title: "Inception", year: 2010, rating: 8.8, type: "film", duration: "2s 28dk", category: "populer", emoji: "🌀" },
-    { id: 4, title: "Game of Thrones", year: 2011, rating: 9.2, type: "dizi", duration: "8 Sezon", category: "populer", emoji: "🐉" },
-    { id: 5, title: "The Dark Knight", year: 2008, rating: 9.0, type: "film", duration: "2s 32dk", category: "film", emoji: "🦇" },
-    { id: 6, title: "Stranger Things", year: 2016, rating: 8.7, type: "dizi", duration: "4 Sezon", category: "dizi", emoji: "⚡" },
-    { id: 7, title: "Interstellar", year: 2014, rating: 8.7, type: "film", duration: "2s 49dk", category: "film", emoji: "🌌" },
-    { id: 8, title: "The Witcher", year: 2019, rating: 8.2, type: "dizi", duration: "3 Sezon", category: "dizi", emoji: "⚔️" },
-    { id: 9, title: "Pulp Fiction", year: 1994, rating: 8.9, type: "film", duration: "2s 34dk", category: "film", emoji: "🔫" },
-    { id: 10, title: "Squid Game", year: 2021, rating: 8.0, type: "dizi", duration: "1 Sezon", category: "dizi", emoji: "🟢" },
-    { id: 11, title: "The Matrix", year: 1999, rating: 8.7, type: "film", duration: "2s 16dk", category: "film", emoji: "💊" },
-    { id: 12, title: "Dark", year: 2017, rating: 8.7, type: "dizi", duration: "3 Sezon", category: "dizi", emoji: "🔮" },
-    { id: 13, title: "Forrest Gump", year: 1994, rating: 8.8, type: "film", duration: "2s 22dk", category: "film", emoji: "🪶" },
-    { id: 14, title: "The Office", year: 2005, rating: 8.9, type: "dizi", duration: "9 Sezon", category: "dizi", emoji: "📄" },
-    { id: 15, title: "Fight Club", year: 1999, rating: 8.8, type: "film", duration: "2s 19dk", category: "film", emoji: "🧼" },
-    { id: 16, title: "Sherlock", year: 2010, rating: 9.1, type: "dizi", duration: "4 Sezon", category: "dizi", emoji: "🔍" },
-    { id: 17, title: "Gladiator", year: 2000, rating: 8.5, type: "film", duration: "2s 35dk", category: "film", emoji: "⚔️" },
-    { id: 18, title: "Friends", year: 1994, rating: 8.9, type: "dizi", duration: "10 Sezon", category: "dizi", emoji: "🛋️" },
-    { id: 19, title: "The Godfather", year: 1972, rating: 9.2, type: "film", duration: "2s 55dk", category: "film", emoji: "🍝" },
-    { id: 20, title: "Band of Brothers", year: 2001, rating: 9.4, type: "dizi", duration: "1 Sezon", category: "dizi", emoji: "🎖️" }
-];
-
+let movies = [];
 let currentFilter = "all";
 let currentSearch = "";
 
@@ -30,6 +8,26 @@ const sectionTitle = document.getElementById("sectionTitle");
 const searchInput = document.getElementById("searchInput");
 const heroTitle = document.getElementById("heroTitle");
 const heroDesc = document.getElementById("heroDesc");
+
+async function loadMovies() {
+    try {
+        const res = await fetch("movies.json");
+        movies = await res.json();
+    } catch {
+        movies = [];
+    }
+    if (movies.length > 0) {
+        const hero = movies[Math.floor(Math.random() * movies.length)];
+        heroTitle.textContent = hero.title;
+        heroDesc.textContent = `${hero.overview ? hero.overview.substring(0, 120) + "..." : hero.emoji + " " + (hero.type === "film" ? "Film" : "Dizi")}`;
+        document.querySelector(".hero-meta").innerHTML = `
+            <span>⭐ ${hero.rating || "?"}</span>
+            <span>🕒 ${hero.duration || "?"}</span>
+            <span>${hero.year || "?"}</span>
+        `;
+    }
+    renderMovies();
+}
 
 function renderMovies() {
     let filtered = movies;
@@ -54,16 +52,16 @@ function renderMovies() {
 
     movieGrid.innerHTML = filtered.map(m => `
         <div class="movie-card" data-id="${m.id}">
-            <div class="poster">
+            <div class="poster" ${m.poster ? `style="background:url('${m.poster}') center/cover no-repeat;"` : ""}>
                 <span class="type-badge">${m.type === "film" ? "🎬 Film" : "📺 Dizi"}</span>
-                ${m.emoji}
+                ${!m.poster ? m.emoji : ""}
             </div>
             <div class="info">
                 <h3>${m.title}</h3>
                 <div class="meta">
-                    <span>⭐ ${m.rating}</span>
-                    <span>${m.duration}</span>
-                    <span>${m.year}</span>
+                    <span>⭐ ${m.rating || "?"}</span>
+                    <span>${m.duration || "?"}</span>
+                    <span>${m.year || "?"}</span>
                 </div>
             </div>
         </div>
@@ -72,14 +70,53 @@ function renderMovies() {
     document.querySelectorAll(".movie-card").forEach(card => {
         card.addEventListener("click", () => {
             const id = parseInt(card.dataset.id);
-            const movie = movies.find(m => m.id === id);
-            if (movie) {
-                heroTitle.textContent = movie.title;
-                heroDesc.textContent = `${movie.emoji} ${movie.type === "film" ? "Film" : "Dizi"} | ${movie.duration} | ${movie.year}`;
-                window.scrollTo({ top: 0, behavior: "smooth" });
-            }
+            openModal(id);
         });
     });
+}
+
+function openModal(id) {
+    const movie = movies.find(m => m.id === id);
+    if (!movie) return;
+
+    const existing = document.querySelector(".movie-modal");
+    if (existing) existing.remove();
+
+    const modal = document.createElement("div");
+    modal.className = "movie-modal";
+    modal.innerHTML = `
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">✕</button>
+            <div class="modal-layout">
+                <div class="modal-poster" ${movie.poster ? `style="background:url('${movie.poster}') center/cover no-repeat;min-height:400px;"` : ""}>
+                    ${!movie.poster ? `<div style="font-size:80px;display:flex;align-items:center;justify-content:center;min-height:400px;">${movie.emoji}</div>` : ""}
+                </div>
+                <div class="modal-info">
+                    <span class="badge">${movie.type === "film" ? "🎬 Film" : "📺 Dizi"}</span>
+                    <h2>${movie.title}</h2>
+                    <p>${movie.overview || "Açıklama bulunamadı."}</p>
+                    <div class="modal-meta">
+                        <span>⭐ ${movie.rating || "?"}</span>
+                        <span>📅 ${movie.year || "?"}</span>
+                        <span>🕒 ${movie.duration || "?"}</span>
+                    </div>
+                    <iframe src="${movie.embed_url}" allowfullscreen frameborder="0" class="modal-iframe"></iframe>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    setTimeout(() => modal.classList.add("active"), 10);
+
+    modal.querySelector(".modal-close").addEventListener("click", () => closeModal(modal));
+    modal.querySelector(".modal-overlay").addEventListener("click", () => closeModal(modal));
+}
+
+function closeModal(modal) {
+    modal.classList.remove("active");
+    setTimeout(() => modal.remove(), 300);
 }
 
 document.querySelectorAll(".filter-btn").forEach(btn => {
@@ -99,4 +136,4 @@ searchInput.addEventListener("input", () => {
     renderMovies();
 });
 
-renderMovies();
+loadMovies();
