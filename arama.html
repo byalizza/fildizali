@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arama - Fildizali</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .search-page { padding: 120px 0 60px; }
+        .search-hero { text-align: center; margin-bottom: 40px; }
+        .search-hero h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+        .search-hero p { color: rgba(255,255,255,0.4); font-size: 14px; }
+        .search-bar { max-width: 600px; margin: 0 auto 40px; position: relative; }
+        .search-bar input {
+            width: 100%; padding: 16px 20px 16px 52px;
+            border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04); color: #fff;
+            font-size: 18px; outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-bar input:focus { border-color: #e50914; }
+        .search-bar .icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 20px; opacity: 0.4; }
+        .no-results { text-align: center; padding: 80px 0; color: rgba(255,255,255,0.3); }
+        .no-results span { font-size: 64px; display: block; margin-bottom: 16px; }
+        .search-tag { font-size: 13px; color: rgba(255,255,255,0.3); margin-bottom: 20px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.4); text-decoration: none; font-size: 14px; margin-bottom: 24px; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">fildizali<span>.tv</span></div>
+                <nav>
+                    <a href="index.html">Ana Sayfa</a>
+                    <a href="#">Filmler</a>
+                    <a href="#">Diziler</a>
+                    <a href="#">Popüler</a>
+                    <a href="admin.html" style="color:#e50914;">Admin</a>
+                </nav>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Film veya dizi ara...">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="search-page">
+        <div class="container">
+            <a href="index.html" class="back-link">← Ana Sayfaya Dön</a>
+
+            <div class="search-bar">
+                <span class="icon">🔍</span>
+                <input type="text" id="searchField" placeholder="Film veya dizi ara...">
+            </div>
+
+            <div id="resultsArea">
+                <div class="section-header">
+                    <h2 id="resultTitle">Sonuçlar</h2>
+                    <span class="count" id="itemCount">0 içerik</span>
+                </div>
+                <div class="movie-grid" id="movieGrid"></div>
+                <div class="no-results" id="noResults" style="display:none;">
+                    <span>🔍</span>
+                    <h3>Sonuç bulunamadı</h3>
+                    <p>Farklı bir kelime dene</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>© 2026 fildizali.tv - Tüm hakları saklıdır.</p>
+        </div>
+    </footer>
+
+    <script>
+        let movies = [];
+
+        async function loadMovies() {
+            try {
+                const res = await fetch("/api/movies");
+                movies = await res.json();
+            } catch {
+                try { const res = await fetch("movies.json"); movies = await res.json(); } catch { movies = []; }
+            }
+            const q = new URLSearchParams(window.location.search).get("q");
+            if (q) {
+                document.getElementById("searchField").value = q;
+                doSearch(q);
+            }
+        }
+
+        function doSearch(query) {
+            const q = query.toLowerCase().trim();
+            const grid = document.getElementById("movieGrid");
+            const noResults = document.getElementById("noResults");
+            const count = document.getElementById("itemCount");
+            const title = document.getElementById("resultTitle");
+
+            if (!q) {
+                grid.innerHTML = "";
+                noResults.style.display = "block";
+                noResults.querySelector("span").textContent = "🔍";
+                noResults.querySelector("h3").textContent = "Bir şey ara";
+                noResults.querySelector("p").textContent = "Yukarıdan film veya dizi adı gir";
+                count.textContent = "0 içerik";
+                title.textContent = "Sonuçlar";
+                return;
+            }
+
+            const results = movies.filter(m => m.title.toLowerCase().includes(q));
+            count.textContent = `${results.length} içerik`;
+            title.textContent = `"${q}" için sonuçlar`;
+
+            if (results.length === 0) {
+                grid.innerHTML = "";
+                noResults.style.display = "block";
+                noResults.querySelector("span").textContent = "😕";
+                noResults.querySelector("h3").textContent = "Sonuç bulunamadı";
+                noResults.querySelector("p").textContent = "Farklı bir kelime dene";
+                return;
+            }
+
+            noResults.style.display = "none";
+            grid.innerHTML = results.map(m => `
+                <div class="movie-card" data-id="${m.id}">
+                    <div class="poster" ${m.poster ? `style="background:url('${m.poster}') center/cover no-repeat;"` : ""}>
+                        <span class="type-badge">${m.type === "film" ? "🎬 Film" : "📺 Dizi"}</span>
+                        ${!m.poster ? (m.emoji || "🎬") : ""}
+                    </div>
+                    <div class="info">
+                        <h3>${m.title}</h3>
+                        <div class="meta">
+                            <span>⭐ ${m.rating || "?"}</span>
+                            <span>${m.duration || "?"}</span>
+                            <span>${m.year || "?"}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join("");
+
+            document.querySelectorAll(".movie-card").forEach(card => {
+                card.addEventListener("click", () => {
+                    const id = parseInt(card.dataset.id);
+                    const movie = movies.find(m => m.id === id);
+                    if (movie) openModal(movie);
+                });
+            });
+        }
+
+        function openModal(movie) {
+            const existing = document.querySelector(".movie-modal");
+            if (existing) existing.remove();
+
+            const modal = document.createElement("div");
+            modal.className = "movie-modal";
+            modal.innerHTML = `
+                <div class="modal-overlay"></div>
+                <div class="modal-content">
+                    <button class="modal-close">✕</button>
+                    <div class="modal-layout">
+                        <div class="modal-poster" ${movie.poster ? `style="background:url('${movie.poster}') center/cover no-repeat;min-height:400px;"` : ""}>
+                            ${!movie.poster ? `<div style="font-size:80px;display:flex;align-items:center;justify-content:center;min-height:400px;">${movie.emoji || "🎬"}</div>` : ""}
+                        </div>
+                        <div class="modal-info">
+                            <span class="badge">${movie.type === "film" ? "🎬 Film" : "📺 Dizi"}</span>
+                            <h2>${movie.title}</h2>
+                            <p>${movie.overview || "Açıklama bulunamadı."}</p>
+                            <div class="modal-meta">
+                                <span>⭐ ${movie.rating || "?"}</span>
+                                <span>📅 ${movie.year || "?"}</span>
+                                <span>🕒 ${movie.duration || "?"}</span>
+                            </div>
+                            <iframe src="${movie.embed_url}" allowfullscreen frameborder="0" class="modal-iframe"></iframe>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add("active"), 10);
+            modal.querySelector(".modal-close").addEventListener("click", () => closeModal(modal));
+            modal.querySelector(".modal-overlay").addEventListener("click", () => closeModal(modal));
+        }
+
+        function closeModal(modal) {
+            modal.classList.remove("active");
+            setTimeout(() => modal.remove(), 300);
+        }
+
+        document.getElementById("searchField").addEventListener("input", (e) => {
+            doSearch(e.target.value);
+        });
+
+        document.getElementById("searchInput").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const q = e.target.value.trim();
+                if (q) window.location.href = "arama.html?q=" + encodeURIComponent(q);
+            }
+        });
+
+        loadMovies();
+    </script>
+</body>
+</html>

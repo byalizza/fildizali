@@ -1,6 +1,5 @@
 let movies = [];
 let currentFilter = "all";
-let currentSearch = "";
 
 const movieGrid = document.getElementById("movieGrid");
 const itemCount = document.getElementById("itemCount");
@@ -36,18 +35,13 @@ function renderMovies() {
         filtered = filtered.filter(m => m.category === currentFilter || m.type === currentFilter);
     }
 
-    if (currentSearch) {
-        const q = currentSearch.toLowerCase();
-        filtered = filtered.filter(m => m.title.toLowerCase().includes(q));
-    }
-
     itemCount.textContent = `${filtered.length} içerik`;
 
     if (currentFilter !== "all") {
         const names = { all: "Tüm İçerikler", film: "Filmler", dizi: "Diziler", populer: "Popüler" };
         sectionTitle.textContent = names[currentFilter] || "Tüm İçerikler";
     } else {
-        sectionTitle.textContent = currentSearch ? `"${currentSearch}" için sonuçlar` : "Tüm İçerikler";
+        sectionTitle.textContent = "Tüm İçerikler";
     }
 
     movieGrid.innerHTML = filtered.map(m => `
@@ -128,12 +122,11 @@ document.querySelectorAll(".filter-btn").forEach(btn => {
     });
 });
 
-searchInput.addEventListener("input", () => {
-    currentSearch = searchInput.value;
-    currentFilter = "all";
-    document.querySelector(".filter-btn.active").classList.remove("active");
-    document.querySelector('[data-filter="all"]').classList.add("active");
-    renderMovies();
+searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        const q = searchInput.value.trim();
+        if (q) window.location.href = "arama.html?q=" + encodeURIComponent(q);
+    }
 });
 
 loadMovies();
